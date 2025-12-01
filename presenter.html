@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Workshop Notes - Presenter View</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;600&family=Karla:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            min-height: 100vh;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            font-family: 'Karla', sans-serif;
+            padding: 24px;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .header h1 {
+            color: white;
+            font-weight: 500;
+            font-size: 1.5rem;
+        }
+
+        .header-controls {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .note-count {
+            color: rgba(255,255,255,0.7);
+            font-size: 0.95rem;
+        }
+
+        .refresh-btn {
+            padding: 10px 20px;
+            background: rgba(255,255,255,0.1);
+            color: white;
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 6px;
+            font-family: 'Karla', sans-serif;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .refresh-btn:hover {
+            background: rgba(255,255,255,0.2);
+        }
+
+        .config-section {
+            background: rgba(255,255,255,0.05);
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 24px;
+        }
+
+        .config-section label {
+            color: rgba(255,255,255,0.8);
+            font-size: 0.9rem;
+            display: block;
+            margin-bottom: 8px;
+        }
+
+        .config-section input {
+            width: 100%;
+            max-width: 600px;
+            padding: 12px;
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 6px;
+            background: rgba(255,255,255,0.1);
+            color: white;
+            font-family: 'Karla', sans-serif;
+            font-size: 0.95rem;
+        }
+
+        .config-section input::placeholder {
+            color: rgba(255,255,255,0.4);
+        }
+
+        .config-section input:focus {
+            outline: none;
+            border-color: rgba(255,255,255,0.4);
+        }
+
+        .config-hint {
+            color: rgba(255,255,255,0.5);
+            font-size: 0.8rem;
+            margin-top: 8px;
+        }
+
+        .notes-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 20px;
+        }
+
+        .note-card {
+            border-radius: 6px;
+            box-shadow: 
+                0 2px 8px rgba(0,0,0,0.2),
+                0 8px 24px rgba(0,0,0,0.15);
+            padding: 20px;
+            position: relative;
+            min-height: 180px;
+            display: flex;
+            flex-direction: column;
+            transform: rotate(var(--rotation, 0deg));
+            transition: transform 0.2s;
+        }
+
+        .note-card:hover {
+            transform: rotate(0deg) scale(1.02);
+            z-index: 10;
+        }
+
+        .note-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: repeating-linear-gradient(
+                transparent,
+                transparent 27px,
+                rgba(0,0,0,0.03) 28px
+            );
+            pointer-events: none;
+            border-radius: 6px;
+        }
+
+        .note-author {
+            font-size: 0.8rem;
+            font-weight: 600;
+            margin-bottom: 12px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid rgba(0,0,0,0.1);
+            opacity: 0.7;
+        }
+
+        .note-text {
+            font-family: 'Caveat', cursive;
+            line-height: 1.5;
+            flex-grow: 1;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+        }
+
+        .note-meta {
+            font-size: 0.7rem;
+            margin-top: 12px;
+            opacity: 0.5;
+        }
+
+        /* Font size classes */
+        .note-text.font-xs { font-size: 0.85rem; }
+        .note-text.font-small { font-size: 1rem; }
+        .note-text.font-medium { font-size: 1.3rem; }
+        .note-text.font-large { font-size: 1.7rem; }
+        .note-text.font-xl { font-size: 2.2rem; }
+
+        .loading {
+            color: rgba(255,255,255,0.7);
+            text-align: center;
+            padding: 60px;
+            font-size: 1.1rem;
+        }
+
+        .error {
+            color: #e74c3c;
+            background: rgba(231, 76, 60, 0.1);
+            border: 1px solid rgba(231, 76, 60, 0.3);
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .empty-state {
+            color: rgba(255,255,255,0.5);
+            text-align: center;
+            padding: 60px;
+            font-size: 1.1rem;
+        }
+
+        .no-paper-card {
+            background: repeating-linear-gradient(
+                45deg,
+                rgba(255,255,255,0.03),
+                rgba(255,255,255,0.03) 10px,
+                rgba(255,255,255,0.05) 10px,
+                rgba(255,255,255,0.05) 20px
+            );
+            border: 2px dashed rgba(255,255,255,0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: rgba(255,255,255,0.4);
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>📝 Workshop Notes</h1>
+        <div class="header-controls">
+            <span class="note-count" id="noteCount">0 notes</span>
+            <button class="refresh-btn" onclick="loadNotes()">↻ Refresh</button>
+        </div>
+    </div>
+
+    <div class="config-section" id="configSection">
+        <label for="sheetUrl">Google Sheet Published CSV URL</label>
+        <input 
+            type="text" 
+            id="sheetUrl" 
+            placeholder="https://docs.google.com/spreadsheets/d/YOUR_SHEET_ID/gviz/tq?tqx=out:csv"
+        >
+        <p class="config-hint">
+            Paste your published Google Sheet CSV URL here, then click Refresh. 
+            The URL will be saved in your browser for next time.
+        </p>
+    </div>
+
+    <div class="notes-grid" id="notesGrid">
+        <div class="empty-state">
+            Enter your Google Sheet URL above and click Refresh to load notes.
+        </div>
+    </div>
+
+    <script>
+        // Color mappings (same as participant page)
+        const colorMap = {
+            'white': '#ffffff',
+            'yellow': '#fff9c4',
+            'blue': '#bbdefb',
+            'pink': '#f8bbd9',
+            'green': '#c8e6c9',
+            'orange': '#ffe0b2',
+            'purple': '#e1bee7',
+            'gray': '#eeeeee',
+            'black': '#333333',
+            'darkblue': '#1565c0',
+            'darkpink': '#e091b0'
+        };
+
+        function getColor(color) {
+            if (!color) return '#ffffff';
+            return colorMap[color.toLowerCase()] || color;
+        }
+
+        // Load saved URL from localStorage
+        function loadSavedUrl() {
+            const saved = localStorage.getItem('workshopSheetUrl');
+            if (saved) {
+                document.getElementById('sheetUrl').value = saved;
+            }
+        }
+
+        // Parse CSV text
+        function parseCSV(text) {
+            const lines = text.split('\n');
+            if (lines.length < 2) return [];
+
+            // Parse header
+            const headers = parseCSVLine(lines[0]);
+            
+            // Parse data rows
+            const data = [];
+            for (let i = 1; i < lines.length; i++) {
+                if (lines[i].trim() === '') continue;
+                
+                const values = parseCSVLine(lines[i]);
+                const row = {};
+                headers.forEach((header, index) => {
+                    row[header.toLowerCase().trim()] = values[index] || '';
+                });
+                data.push(row);
+            }
+            
+            return data;
+        }
+
+        // Parse a single CSV line (handling quoted values)
+        function parseCSVLine(line) {
+            const values = [];
+            let current = '';
+            let inQuotes = false;
+            
+            for (let i = 0; i < line.length; i++) {
+                const char = line[i];
+                
+                if (char === '"') {
+                    if (inQuotes && line[i + 1] === '"') {
+                        current += '"';
+                        i++;
+                    } else {
+                        inQuotes = !inQuotes;
+                    }
+                } else if (char === ',' && !inQuotes) {
+                    values.push(current);
+                    current = '';
+                } else {
+                    current += char;
+                }
+            }
+            values.push(current);
+            
+            return values.map(v => v.trim().replace(/^"|"$/g, ''));
+        }
+
+        // Create note card HTML
+        function createNoteCard(note, index) {
+            const paperColor = getColor(note.papercolor || note.paper_color || 'white');
+            const penColor = getColor(note.pencolor || note.pen_color || 'black');
+            const fontSize = note.fontsize || note.font_size || 'medium';
+            const name = note.name || 'Anonymous';
+            const text = note.text || note.note || '';
+            
+            // Random slight rotation for visual interest
+            const rotation = (Math.random() - 0.5) * 4;
+
+            const card = document.createElement('div');
+            card.className = 'note-card';
+            card.style.setProperty('--rotation', `${rotation}deg`);
+            card.style.backgroundColor = paperColor;
+            card.style.color = penColor;
+
+            card.innerHTML = `
+                <div class="note-author" style="color: ${penColor}">${escapeHtml(name)}</div>
+                <div class="note-text font-${fontSize}">${escapeHtml(text)}</div>
+            `;
+
+            return card;
+        }
+
+        // Escape HTML to prevent XSS
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Load notes from Google Sheet
+        async function loadNotes() {
+            const sheetUrl = document.getElementById('sheetUrl').value.trim();
+            const grid = document.getElementById('notesGrid');
+            const countEl = document.getElementById('noteCount');
+
+            if (!sheetUrl) {
+                grid.innerHTML = '<div class="empty-state">Please enter a Google Sheet URL above.</div>';
+                return;
+            }
+
+            // Save URL for next time
+            localStorage.setItem('workshopSheetUrl', sheetUrl);
+
+            grid.innerHTML = '<div class="loading">Loading notes...</div>';
+
+            try {
+                const response = await fetch(sheetUrl);
+                if (!response.ok) {
+                    throw new Error('Failed to fetch sheet');
+                }
+
+                const csvText = await response.text();
+                const notes = parseCSV(csvText);
+
+                if (notes.length === 0) {
+                    grid.innerHTML = '<div class="empty-state">No notes submitted yet. Refresh when participants have submitted.</div>';
+                    countEl.textContent = '0 notes';
+                    return;
+                }
+
+                // Clear grid and add notes
+                grid.innerHTML = '';
+                notes.forEach((note, index) => {
+                    const card = createNoteCard(note, index);
+                    grid.appendChild(card);
+                });
+
+                countEl.textContent = `${notes.length} note${notes.length !== 1 ? 's' : ''}`;
+
+            } catch (error) {
+                console.error('Error loading notes:', error);
+                grid.innerHTML = `
+                    <div class="error">
+                        <strong>Failed to load notes</strong><br>
+                        Make sure your Google Sheet is published to the web and the URL is correct.<br>
+                        <small>${error.message}</small>
+                    </div>
+                `;
+            }
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            loadSavedUrl();
+            
+            // Allow pressing Enter in the URL field to load
+            document.getElementById('sheetUrl').addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    loadNotes();
+                }
+            });
+        });
+    </script>
+</body>
+</html>
