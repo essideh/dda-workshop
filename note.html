@@ -251,14 +251,10 @@
                 </div>
                 <button class="submit-btn" id="noPaperSubmitBtn" style="margin-top: 16px;">Continue</button>
             </div>
-             <div id="noPaperResult" style="display: none;">
+            <div id="noPaperResult" style="display: none;">
                 <h1>😕</h1>
                 <p>Sorry, it looks like you didn't receive any paper for this activity.</p>
-    </div>
-</div>
-        <div class="no-paper-message" id="noPaper" style="display: none;">
-            <h1>😕</h1>
-            <p>Sorry, it looks like you didn't receive any paper for this activity.</p>
+            </div>
         </div>
 
         <!-- Main note form -->
@@ -355,12 +351,46 @@
             const wordLimitEl = document.getElementById('wordLimit');
 
             // Handle no paper variation
+            // Handle no paper variation
             if (config.noPaper) {
                 noteForm.style.display = 'none';
                 noPaperMsg.style.display = 'block';
+                
+                document.getElementById('noPaperSubmitBtn').addEventListener('click', async function() {
+                    const name = document.getElementById('noPaperName').value.trim();
+                    if (!name) {
+                        alert('Please enter your name or pseudonym.');
+                        return;
+                    }
+                    
+                    // Submit to sheet
+                    if (config.sheetUrl) {
+                        const data = {
+                            name: name,
+                            text: '[No paper received]',
+                            paperColor: 'none',
+                            penColor: '',
+                            fontSize: '',
+                            wordLimit: '',
+                            banned: '',
+                            timestamp: new Date().toISOString()
+                        };
+                        
+                        await fetch(config.sheetUrl, {
+                            method: 'POST',
+                            mode: 'no-cors',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(data)
+                        });
+                    }
+                    
+                    document.getElementById('noPaperNameForm').style.display = 'none';
+                    document.getElementById('noPaperResult').style.display = 'block';
+                });
+                
                 return;
             }
-
+            
             // Apply paper color
             const paperColor = getColor(config.paperColor);
             notePaper.style.setProperty('--paper-color', paperColor);
