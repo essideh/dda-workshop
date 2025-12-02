@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Design a Discourse-Analytical Project</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;600&family=Karla:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #f5f7fa 0%, #e4e8ec 100%);
+            font-family: 'Karla', sans-serif;
+            padding: 20px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 550px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 
+                0 1px 3px rgba(0,0,0,0.08),
+                0 8px 24px rgba(0,0,0,0.1);
+            padding: 28px;
+        }
+
+        .header {
+            margin-bottom: 20px;
+            padding-bottom: 16px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+
+        .header h1 {
+            font-size: 1.4rem;
+            color: #333;
+            font-weight: 600;
+            margin-bottom: 12px;
+        }
+
+        .header p {
+            font-size: 0.95rem;
+            color: #666;
+            line-height: 1.6;
+        }
+
+        .prompts {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 14px 16px;
+            margin-top: 12px;
+        }
+
+        .prompts ul {
+            margin: 0;
+            padding-left: 18px;
+            color: #555;
+            font-size: 0.9rem;
+            line-height: 1.7;
+        }
+
+        .form-group {
+            margin-bottom: 18px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 0.9rem;
+            color: #555;
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+
+        .form-group input,
+        .form-group textarea {
+            width: 100%;
+            padding: 12px 14px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-family: 'Karla', sans-serif;
+            font-size: 1rem;
+            transition: border-color 0.2s;
+        }
+
+        .form-group input:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #666;
+        }
+
+        .form-group textarea {
+            min-height: 180px;
+            resize: vertical;
+            font-family: 'Caveat', cursive;
+            font-size: 1.3rem;
+            line-height: 1.5;
+        }
+
+        .submit-btn {
+            width: 100%;
+            padding: 14px 24px;
+            background: #2c3e50;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-family: 'Karla', sans-serif;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background 0.2s, transform 0.1s;
+        }
+
+        .submit-btn:hover {
+            background: #34495e;
+        }
+
+        .submit-btn:active {
+            transform: scale(0.98);
+        }
+
+        .submit-btn:disabled {
+            background: #bdc3c7;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .error-message {
+            color: #e74c3c;
+            font-size: 0.9rem;
+            margin-top: 12px;
+            display: none;
+        }
+
+        .error-message.visible {
+            display: block;
+        }
+
+        .success-message {
+            display: none;
+            text-align: center;
+            padding: 40px 20px;
+        }
+
+        .success-message.visible {
+            display: block;
+        }
+
+        .success-message h2 {
+            color: #27ae60;
+            font-size: 1.5rem;
+            margin-bottom: 12px;
+        }
+
+        .success-message p {
+            color: #666;
+        }
+
+        .form-content.hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="card">
+            <!-- Form -->
+            <div class="form-content" id="formContent">
+                <div class="header">
+                    <h1>Design a Discourse-Analytical Project</h1>
+                    <p>Outline your project idea by considering:</p>
+                    <div class="prompts">
+                        <ul>
+                            <li>What's the research question?</li>
+                            <li>Where does the data come from? How will you collect it?</li>
+                            <li>What will you look for? How will you analyse it?</li>
+                            <li>What's the ultimate goal?</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="participantName">Your name or pseudonym</label>
+                    <input type="text" id="participantName" placeholder="Enter your name...">
+                </div>
+
+                <div class="form-group">
+                    <label for="answerText">Your answer</label>
+                    <textarea id="answerText" placeholder="Write your project idea here..."></textarea>
+                </div>
+
+                <button class="submit-btn" id="submitBtn">Submit</button>
+                <div class="error-message" id="errorMessage"></div>
+            </div>
+
+            <!-- Success message -->
+            <div class="success-message" id="successMessage">
+                <h2>✓ Submitted!</h2>
+                <p>Thank you for your contribution.</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Parse URL parameters
+        const params = new URLSearchParams(window.location.search);
+        const sheetUrl = params.get('sheet') || '';
+
+        async function submitAnswer() {
+            const name = document.getElementById('participantName').value.trim();
+            const answer = document.getElementById('answerText').value.trim();
+            const submitBtn = document.getElementById('submitBtn');
+            const errorEl = document.getElementById('errorMessage');
+
+            // Validation
+            if (!name) {
+                errorEl.textContent = 'Please enter your name or pseudonym.';
+                errorEl.classList.add('visible');
+                return;
+            }
+
+            if (!answer) {
+                errorEl.textContent = 'Please write your answer before submitting.';
+                errorEl.classList.add('visible');
+                return;
+            }
+
+            if (!sheetUrl) {
+                errorEl.textContent = 'Submission endpoint not configured. Please contact the workshop facilitator.';
+                errorEl.classList.add('visible');
+                return;
+            }
+
+            errorEl.classList.remove('visible');
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Submitting...';
+
+            const data = {
+                name: name,
+                answer: answer,
+                timestamp: new Date().toISOString()
+            };
+
+            try {
+                await fetch(sheetUrl, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                document.getElementById('formContent').classList.add('hidden');
+                document.getElementById('successMessage').classList.add('visible');
+
+            } catch (error) {
+                errorEl.textContent = 'Failed to submit. Please try again.';
+                errorEl.classList.add('visible');
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Submit';
+            }
+        }
+
+        document.getElementById('submitBtn').addEventListener('click', submitAnswer);
+    </script>
+</body>
+</html>

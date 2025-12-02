@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Project Ideas - Presenter View</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;600&family=Karla:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            min-height: 100vh;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            font-family: 'Karla', sans-serif;
+            padding: 24px;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .header h1 {
+            color: white;
+            font-weight: 500;
+            font-size: 1.5rem;
+        }
+
+        .header-controls {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .answer-count {
+            color: rgba(255,255,255,0.7);
+            font-size: 0.95rem;
+        }
+
+        .refresh-btn {
+            padding: 10px 20px;
+            background: rgba(255,255,255,0.1);
+            color: white;
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 6px;
+            font-family: 'Karla', sans-serif;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .refresh-btn:hover {
+            background: rgba(255,255,255,0.2);
+        }
+
+        .config-section {
+            background: rgba(255,255,255,0.05);
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 24px;
+        }
+
+        .config-section label {
+            color: rgba(255,255,255,0.8);
+            font-size: 0.9rem;
+            display: block;
+            margin-bottom: 8px;
+        }
+
+        .config-section input {
+            width: 100%;
+            max-width: 600px;
+            padding: 12px;
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 6px;
+            background: rgba(255,255,255,0.1);
+            color: white;
+            font-family: 'Karla', sans-serif;
+            font-size: 0.95rem;
+        }
+
+        .config-section input::placeholder {
+            color: rgba(255,255,255,0.4);
+        }
+
+        .config-section input:focus {
+            outline: none;
+            border-color: rgba(255,255,255,0.4);
+        }
+
+        .config-hint {
+            color: rgba(255,255,255,0.5);
+            font-size: 0.8rem;
+            margin-top: 8px;
+        }
+
+        .answers-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 20px;
+        }
+
+        .answer-card {
+            background: #fffef5;
+            border-radius: 8px;
+            box-shadow: 
+                0 2px 8px rgba(0,0,0,0.2),
+                0 8px 24px rgba(0,0,0,0.15);
+            padding: 20px;
+            position: relative;
+            min-height: 180px;
+            max-height: 350px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            transform: rotate(var(--rotation, 0deg));
+            transition: transform 0.2s;
+        }
+
+        .answer-card:hover {
+            transform: rotate(0deg) scale(1.02);
+            z-index: 10;
+        }
+
+        .answer-author {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 12px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid rgba(0,0,0,0.1);
+        }
+
+        .answer-text {
+            font-family: 'Caveat', cursive;
+            font-size: 1.25rem;
+            line-height: 1.5;
+            color: #333;
+            flex-grow: 1;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            white-space: pre-wrap;
+        }
+
+        .loading {
+            color: rgba(255,255,255,0.7);
+            text-align: center;
+            padding: 60px;
+            font-size: 1.1rem;
+        }
+
+        .error {
+            color: #e74c3c;
+            background: rgba(231, 76, 60, 0.1);
+            border: 1px solid rgba(231, 76, 60, 0.3);
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .empty-state {
+            color: rgba(255,255,255,0.5);
+            text-align: center;
+            padding: 60px;
+            font-size: 1.1rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>💡 Project Ideas</h1>
+        <div class="header-controls">
+            <span class="answer-count" id="answerCount">0 responses</span>
+            <button class="refresh-btn" onclick="loadAnswers()">↻ Refresh</button>
+        </div>
+    </div>
+
+    <div class="config-section" id="configSection">
+        <label for="sheetUrl">Google Sheet Published CSV URL</label>
+        <input 
+            type="text" 
+            id="sheetUrl" 
+            placeholder="https://docs.google.com/spreadsheets/d/YOUR_SHEET_ID/gviz/tq?tqx=out:csv"
+        >
+        <p class="config-hint">
+            Paste your published Google Sheet CSV URL here, then click Refresh. 
+            The URL will be saved in your browser for next time.
+        </p>
+    </div>
+
+    <div class="answers-grid" id="answersGrid">
+        <div class="empty-state">
+            Enter your Google Sheet URL above and click Refresh to load responses.
+        </div>
+    </div>
+
+    <script>
+        // Load saved URL from localStorage
+        function loadSavedUrl() {
+            const saved = localStorage.getItem('projectSheetUrl');
+            if (saved) {
+                document.getElementById('sheetUrl').value = saved;
+            }
+        }
+
+        // Parse CSV text
+        function parseCSV(text) {
+            const lines = text.split('\n');
+            if (lines.length < 2) return [];
+
+            const headers = parseCSVLine(lines[0]);
+            
+            const data = [];
+            for (let i = 1; i < lines.length; i++) {
+                if (lines[i].trim() === '') continue;
+                
+                const values = parseCSVLine(lines[i]);
+                const row = {};
+                headers.forEach((header, index) => {
+                    row[header.toLowerCase().trim()] = values[index] || '';
+                });
+                data.push(row);
+            }
+            
+            return data;
+        }
+
+        // Parse a single CSV line (handling quoted values)
+        function parseCSVLine(line) {
+            const values = [];
+            let current = '';
+            let inQuotes = false;
+            
+            for (let i = 0; i < line.length; i++) {
+                const char = line[i];
+                
+                if (char === '"') {
+                    if (inQuotes && line[i + 1] === '"') {
+                        current += '"';
+                        i++;
+                    } else {
+                        inQuotes = !inQuotes;
+                    }
+                } else if (char === ',' && !inQuotes) {
+                    values.push(current);
+                    current = '';
+                } else {
+                    current += char;
+                }
+            }
+            values.push(current);
+            
+            return values.map(v => v.trim().replace(/^"|"$/g, ''));
+        }
+
+        // Escape HTML
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Create answer card
+        function createAnswerCard(answer, index) {
+            const name = answer.name || 'Anonymous';
+            const text = answer.answer || '';
+            
+            const rotation = (Math.random() - 0.5) * 3;
+
+            const card = document.createElement('div');
+            card.className = 'answer-card';
+            card.style.setProperty('--rotation', `${rotation}deg`);
+
+            card.innerHTML = `
+                <div class="answer-author">${escapeHtml(name)}</div>
+                <div class="answer-text">${escapeHtml(text)}</div>
+            `;
+
+            return card;
+        }
+
+        // Load answers from Google Sheet
+        async function loadAnswers() {
+            const sheetUrl = document.getElementById('sheetUrl').value.trim();
+            const grid = document.getElementById('answersGrid');
+            const countEl = document.getElementById('answerCount');
+
+            if (!sheetUrl) {
+                grid.innerHTML = '<div class="empty-state">Please enter a Google Sheet URL above.</div>';
+                return;
+            }
+
+            localStorage.setItem('projectSheetUrl', sheetUrl);
+
+            grid.innerHTML = '<div class="loading">Loading responses...</div>';
+
+            try {
+                const response = await fetch(sheetUrl);
+                if (!response.ok) {
+                    throw new Error('Failed to fetch sheet');
+                }
+
+                const csvText = await response.text();
+                const answers = parseCSV(csvText);
+
+                if (answers.length === 0) {
+                    grid.innerHTML = '<div class="empty-state">No responses yet. Refresh when participants have submitted.</div>';
+                    countEl.textContent = '0 responses';
+                    return;
+                }
+
+                grid.innerHTML = '';
+                answers.forEach((answer, index) => {
+                    const card = createAnswerCard(answer, index);
+                    grid.appendChild(card);
+                });
+
+                countEl.textContent = `${answers.length} response${answers.length !== 1 ? 's' : ''}`;
+
+            } catch (error) {
+                console.error('Error loading answers:', error);
+                grid.innerHTML = `
+                    <div class="error">
+                        <strong>Failed to load responses</strong><br>
+                        Make sure your Google Sheet is published to the web and the URL is correct.<br>
+                        <small>${error.message}</small>
+                    </div>
+                `;
+            }
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            loadSavedUrl();
+            
+            document.getElementById('sheetUrl').addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    loadAnswers();
+                }
+            });
+        });
+    </script>
+</body>
+</html>
